@@ -118,9 +118,9 @@ var gameInternel = setInterval(function(){
         //    setY (bullets[i],getY(bullets[i])+bulletStep);
         var y = getY(bullets[i])+bulletStep;
         // console.log('getX(bullets[i])'+getX(bullets[i]));
-        //    销毁子弹
+   
         if(y > edge_up){
-            //注意，是removeChild
+
             findId('galax').removeChild(bullets[i]);
             continue;
         }
