@@ -22,9 +22,7 @@ var time = 0;
 function findId(id){
     return document.getElementById(id);
 }
-// function findClass(id){
-//     return document.getElementsByClassName(id);
-// }
+
 
 function getY(findid){
    return findid.style.bottom.replace('px','')-0;
@@ -45,11 +43,9 @@ function getX(findid){
 
 
 function keydownEvent (e){
-    // console.log(Event);
-    // alert('aaaa');
-    // var ev =  e || event ;
+
     var ev = e || window.event;
-    // console.log(ev);
+
     var a = ev.keyCode;
     console.log(a);
 
@@ -79,7 +75,7 @@ function keydownEvent (e){
 
 
 
-// 设置游戏的帧动画定时器
+// timer
 var gameInternel = setInterval(function(){
     if(goingUp){
         var y = getY(findId(planest));
@@ -115,7 +111,7 @@ var gameInternel = setInterval(function(){
         setX(findId(planest), y);
     }
     
-    // 发送子弹
+    // send bullets
     var bullets = document.getElementsByClassName('bullet'); //得到array
     if(bullets){
         for(var i =0; i < bullets.length; i++){
@@ -130,29 +126,24 @@ var gameInternel = setInterval(function(){
         }
         setY(bullets[i], y);
 
-        //碰撞检测+子弹+飞机
+        //touch 
         var enemies = document.getElementsByClassName('enemy');
         for(var j =0 ;j< enemies.length;j++){
                 var x1 = getX(enemies[j]);
                 var y1 = getY(enemies[j]);
                 var x2 = getX(bullets[i]);
-                // console.log(getX(bullets[i]));
+            
                 var y2 = y;
                 console.log(x1+'  '+x2);
-                // console.log(Math.abs(x1-x2))
-                // 两数相减==enemy的width
+     
                 var x_dis =Math.abs(x1-x2);
 
-                //无敌 || false
+                
                 if( x_dis< enemyWidth && Math.abs(y-y1)<bullethight){
-                    // alert();
+          
                     console.log('touch');
                     enemies[j].src ="./img/boom_small.png";
-                    // findId('galax').removeChild(enemies[j]);
-                   
-                   
-                    //1000ms 之后已经找不到了，interval为42ms
-                    // lock the enemies[j]
+   
                     (function(enemy){
                     setTimeout(function(){
                         
@@ -162,8 +153,7 @@ var gameInternel = setInterval(function(){
                         }
                         
                     },50); })(enemies[j]);
-                    //闭包
-                    //也可以在setInterval外面，设置一个setInterval，每100s去做remove
+                
     
                 }
             }
@@ -195,17 +185,16 @@ function keyupEvent (e){
 
 
 // setTimeout only once 
-// 产生子弹
+
 
 setInterval(function(){
     var bulletX = getX(findId(planest))+28;
-    // console.log('bulletX'+bulletX);
+  
     var bulletY = getY(findId(planest))+48;
 
-    // findId(planest).innerHTML += " <img class=\"bullet\" style=\"width:20%; position: absolute;left:22px;bottom: "+bulletY+"px;\"src=\"img/shell.png\">";
-    // 也可以用.appendChild
+
     findId('galax').innerHTML += " <img class=\"bullet\" style=\"width:2%; position: absolute;left:"+ bulletX+"px;bottom: "+bulletY+"px;\"src=\"img/shell.png\">";
-    // console.log('not success')
+
 }, 500)
 
 // enemyMove
@@ -216,24 +205,15 @@ setInterval(function(){
         setY(enemies[i], y);
         if(y < 0 - enemyHeight ){
             findId('galax').removeChild(enemies[i]);
-            // return;
+        
         }
 
-        //     var x = getX(enemies[i]);
-        //     x = x+ 11* Math.sin(time); 
-        //     setX(enemies[i], x);     
-        // // 问题在于没有确定是哪个enemy，所以所有的enemy会一起移动
-        // // if(Math.sin(Math.random()*100)>0){
-        // //     var x = getX(enemies[i]);
-        // //     x = x+ 11* Math.sin(time); 
-        // //     setX(enemies[i], x);          
-        // // }
 
        
     }
     var suiji= Math.floor(Math.abs(10*Math.random()));
     var suiji2 = suiji%2; 
-    // var suiji = Math.sin(Math.random());
+    
     if(enemies[suiji] && suiji2 ==1){
         var x = getX(enemies[suiji]);
         x = x+ 30* Math.cos(time); 
@@ -263,83 +243,10 @@ setInterval(function(){
 
 
 
-// //另外的定时器可以让图片爆炸并消失 类似于闭包
-// setInterval(function(){
-//     var enemies = document.getElementsByClassName('enemy');
-//     for(var j =0 ;j< enemies.length;j++){
-//         // if(enemies[i].src == "./img/boom_small.png" && enemies.length != 0){
-//             console.log('炸到了'+enemies[j].src.indexOf("./img/boom_small.png"));
-//         if(enemies[j].src.indexOf("./img/boom_small.png") ){
-//             findId('galax').removeChild(enemies[j]);
-//             console.log('炸到了啊啊啊啊啊啊');
-//         }
 
-//     }
-
-
-// }, 1000)
-
-// //扫描全局的子弹
-
-//多个飞机
 setInterval(function(){
     var x = Math.floor(300*Math.random());
-    // var roll = true;
-    // if(Math.floor(Math.random()*100)){
-    //     roll = false;
-    // }else{
-    //     roll = true;
-    // }
-    // console.log(roll);
-    // findId ('galax').innerHTML += "<img roll=\""+roll+"\" class=\"enemy\" style=\"left: "+x+"px;z-index: 1;bottom: 600px; width: 50px;\" src=\"./img/enemy_small.png\"/>";
+
     findId ('galax').innerHTML += "<img class=\"enemy\" style=\"left: "+x+"px;z-index: 1;bottom: 600px; width: 50px;\" src=\"./img/enemy_small.png\"/>";
 }, 1000)
 
-// // ——————————另一种飞行的飞机————————
-// setInterval(function(){
-//     var enemies = document.getElementsByClassName('enemy2');
-//     for(var i = 0; i < enemies.length; i++){
-//         var y = getY(enemies[i]) - enemyStep;
-//         setY(enemies[i], y);
-//         if(y < 0 - enemyHeight ){
-//             findId('galax').removeChild(enemies[i]);
-//             // return;
-//         }   
-//     }
-//     var suiji= Math.floor(Math.abs(10*Math.random()));
-//     var suiji2 = suiji%2; 
-//     // var suiji = Math.sin(Math.random());
-//     if(enemies[suiji] && suiji2 ==1){
-//         var x = getX(enemies[suiji]);
-//         x = x+ 30* Math.cos(time); 
-//         setX(enemies[suiji], x);  
-       
-//         (function(enemy){
-//             setTimeout(function(){
-//                 var x = getX(enemies[suiji]);
-//                 x = x+ 30* Math.cos(time); 
-//                 setX(enemies[suiji], x);  
-                
-//             },50); })(enemies[suiji]);
-
-//             if (suiji %2 ==0){
-//                 (function(enemy){
-//                     setTimeout(function(){
-//                         var x = getX(enemies[suiji]);
-//                         x = x+ 30* Math.cos(time); 
-//                         setX(enemies[suiji], x);  
-                        
-//                     },50); })(enemies[suiji]);
-//             }
-//     }
-
-    
-
-// }, 55)
-
-// //多个飞机
-// setInterval(function(){
-//     var x = Math.floor(300*Math.random());
-
-//     findId ('galax').innerHTML += "<img class=\"enemy2\" style=\"left: "+x+"px;z-index: 1;bottom: 600px; width: 50px;\" src=\"./img/boom_big.png\"/>";
-// }, 1000)
