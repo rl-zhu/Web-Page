@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlaneFight</title>
+    <style>
+        #galax {
+            width: 300px; margin: 20px auto; position: relative; background-color: black;overflow: hidden;
+        }
+        #thePlane {
+            position: absolute;
+        }
+        .enemy {
+            position: absolute;
+        left: 200px;z-index: 1;bottom: 600bx;width: 10px;
+        }
+        .enemy2 {
+            position: absolute;
+        }
+
+    </style>
+
+</head>
+<!-- 按下key时调用函数  -->
+<body onkeydown="keydownEvent()" onkeyup="keyupEvent()">
+    <div  id="galax">
+        <!-- bg -->
+        <img style="width: 300px;" src="./img/bg_1.jpg"> 
+        <!-- <img class="enemy" style="left: 0px;z-index: 1;bottom: 600px; width: 50px;" src="./img/enemy_small.png"/> -->
+        <div id="thePlane" style="width: 60px; bottom: 10px; left:130px">
+            <!-- <img id="thePlane" style="width: 60px; bottom: 10px; left:130px" src="./img/plane_1.png"> -->
+            <img style="width: 100%;" src="./img/plane_1.png">
+            <!-- <img style="width:20%; position: absolute;left:14px;bottom: 0px;" src="img/shell.png">"; -->
+
+        </div>
+        
+    </div>
+
+
+
+    <script src="./play2.js"></script>
+</body>
+</html>
