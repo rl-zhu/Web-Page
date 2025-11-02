@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Twenty One</title>
+<meta name="theme-color" content="#ffffff" />
+<!-- <script>
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE_NAME = 'mood-cache-v2';
+    const CACHE_LIFETIME = 60 * 60 * 1000; // 1 hour
+
+    self.addEventListener('install', event => {
+      event.waitUntil(
+        caches.open(CACHE_NAME).then(cache =>
+          cache.addAll(['./'])
+        )
+      );
+      console.log('Service worker installed');
+    });
+
+    self.addEventListener('fetch', event => {
+      event.respondWith(
+        caches.open(CACHE_NAME).then(async cache => {
+          const cached = await cache.match(event.request);
+          if (cached) {
+            // Check if expired
+            const dateHeader = cached.headers.get('date');
+            if (dateHeader) {
+              const age = Date.now() - new Date(dateHeader).getTime();
+              if (age < CACHE_LIFETIME) {
+                return cached; // still fresh
+              }
+            }
+          }
+          // otherwise fetch new one
+          try {
+            const response = await fetch(event.request);
+            if (response.ok) cache.put(event.request, response.clone());
+            return response;
+          } catch (err) {
+            return cached || Response.error();
+          }
+        })
+      );
+    });
+
+    self.addEventListener('activate', e => {
+      e.waitUntil(
+        caches.keys().then(keys =>
+          Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+        )
+      );
+    });
+  `;
+  const blob = new Blob([swCode], { type: 'text/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl);
+}
+</script> -->
+
+<style>
+:root { --bg:#fafafa; --card:#fff; --text:#111; --sub:#666; --line:#eee; --primary:#1a73e8; }
+* { box-sizing:border-box; }
+body { margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial; background:var(--bg); color:var(--text);}
+header { position:sticky; top:0; background:var(--card); border-bottom:1px solid var(--line); padding:12px 16px; z-index:10;}
+header h1 { margin:0; font-size:18px;}
+.container { max-width:760px; margin:0 auto; padding:12px 16px 80px;}
+.composer { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px;}
+textarea { width:100%; border:none; resize:none; min-height:90px; font-size:16px; outline:none; background:transparent;}
+.row { display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+.btn { appearance:none; border:none; padding:10px 14px; border-radius:999px; background:var(--primary); color:#fff; font-weight:600; cursor:pointer;}
+.btn:disabled { opacity:.4; cursor:not-allowed;}
+.btn-outline { background:#fff; color:var(--primary); border:1px solid var(--primary);}
+.toolbar { display:flex; align-items:center; justify-content:flex-end; margin-top:8px;}
+.feed { margin-top:14px; display:grid; gap:10px;}
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px;}
+.meta { display:flex; gap:8px; align-items:center; justify-content:space-between; margin-top:6px;}
+.time { color:var(--sub); font-size:12px;}
+.actions { display:flex; gap:6px;}
+.pill { padding:6px 10px; border-radius:999px; background:#f1f3f4; color:#333; border:1px solid #e5e7eb;}
+.search { margin:12px 0; display:flex; gap:8px;}
+input[type="search"] { flex:1; padding:10px 12px; border-radius:999px; border:1px solid var(--line); background:#fff; font-size:14px;}
+.footer { position:fixed; left:0; right:0; bottom:0; background:var(--card); border-top:1px solid var(--line); padding:10px 12px; display:flex; gap:8px; flex-wrap:wrap; justify-content:center;}
+.hint { text-align:center; color:var(--sub); font-size:12px; margin-top:8px;}
+.counter { color:var(--sub); font-size:12px;}
+.empty { text-align:center; color:var(--sub); padding:40px 0;}
+@media (hover:hover){ .card:hover{ border-color:#ddd; } }
+</style>
+</head>
+<body>
+<header><h1>📝 TwentyOne</h1></header>
+
+<div class="container">
+  <div class="composer">
+    <textarea id="text" placeholder="此刻的心情… 支持 Emoji 😊 (#标签 也可以)"></textarea>
+    <div class="toolbar">
+      <button class="btn" id="postBtn" disabled>Publish</button>
+    </div>
+  </div>
+
+  <div class="search">
+    <input id="q" type="search" placeholder="搜索心情或日期（如 2025-02）">
+    <button class="btn-outline" id="clearSearch">Clear</button>
+  </div>
+
+  <div class="feed" id="feed"></div>
+  <div class="empty" id="empty" style="display:none;">还没有内容，写下第一条心情吧～</div>
+</div>
+
+<div class="footer">
+  <button class="btn-outline" id="exportBtn">导出 JSON</button>
+  <label class="btn-outline" for="importFile" style="cursor:pointer;">导入 JSON</label>
+  <input id="importFile" type="file" accept="application/json" style="display:none;">
+  <button class="btn-outline" id="clearAllBtn">清空全部</button>
+</div>
+
+<script>
+// ====== 数据层 ======
+const KEY = 'moods_v2';
+function loadAll(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]');}catch{return[];} }
+function saveAll(arr){ localStorage.setItem(KEY, JSON.stringify(arr)); }
+
+// ====== 工具函数 ======
+function fmt(ts){ return new Date(ts).toLocaleString([], {hour12:false}); }
+function toDateStr(ts){ const d=new Date(ts); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; }
+
+// ====== DOM ======
+const text=document.getElementById('text');
+const postBtn=document.getElementById('postBtn');
+const feed=document.getElementById('feed');
+const empty=document.getElementById('empty');
+const q=document.getElementById('q');
+const clearSearch=document.getElementById('clearSearch');
+const exportBtn=document.getElementById('exportBtn');
+const importFile=document.getElementById('importFile');
+const clearAllBtn=document.getElementById('clearAllBtn');
+
+// ====== 发布逻辑 ======
+text.addEventListener('input',()=>{postBtn.disabled=!text.value.trim();});
+postBtn.addEventListener('click',()=>{
+  const content=text.value.trim();
+  if(!content) return;
+  const all=loadAll();
+  all.unshift({id:Date.now()+Math.random().toString(36).slice(2),content,ts:Date.now()});
+  saveAll(all);
+  text.value=''; postBtn.disabled=true;
+  render();
+  scrollTo({top:0,behavior:'smooth'});
+});
+
+// ====== 渲染 ======
+function render(){
+  const all=loadAll();
+  const keyword=q.value.trim().toLowerCase();
+  let list=all;
+  if(keyword){
+    list=all.filter(it=>{
+      const dateStr=toDateStr(it.ts);
+      return it.content.toLowerCase().includes(keyword)||dateStr.includes(keyword);
+    });
+  }
+  feed.innerHTML='';
+  if(list.length===0){ empty.style.display='block'; return; }
+  empty.style.display='none';
+  list.forEach(item=>{
+    const card=document.createElement('div');
+    card.className='card';
+    const contentEl=document.createElement('div');
+    contentEl.textContent=item.content;
+    const meta=document.createElement('div'); meta.className='meta';
+    const time=document.createElement('div'); time.className='time';
+    time.textContent=fmt(item.ts);
+    const actions=document.createElement('div'); actions.className='actions';
+    const del=document.createElement('button'); del.className='pill'; del.textContent='删除';
+    del.onclick=()=>{ if(confirm('确定删除这条心情吗？')){ saveAll(loadAll().filter(x=>x.id!==item.id)); render(); } };
+    const edit=document.createElement('button'); edit.className='pill'; edit.textContent='编辑';
+    edit.onclick=()=>{ const newText=prompt('修改内容：',item.content); if(newText!=null){ const all=loadAll(); const i=all.findIndex(x=>x.id===item.id); if(i>=0){ all[i].content=newText.trim(); saveAll(all); render(); } } };
+    actions.append(edit,del);
+    meta.append(time,actions);
+    card.append(contentEl,meta);
+    feed.append(card);
+  });
+}
+q.addEventListener('input',render);
+clearSearch.onclick=()=>{q.value='';render();};
+
+// ====== 导出/导入/清空 ======
+exportBtn.onclick=()=>{
+  const blob=new Blob([JSON.stringify(loadAll(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='moods-backup.json'; a.click();
+  URL.revokeObjectURL(a.href);
+};
+importFile.onchange=async()=>{
+  const file=importFile.files[0]; if(!file)return;
+  const text=await file.text();
+  try{
+    const arr=JSON.parse(text);
+    const old=loadAll(); const map=new Map();
+    [...arr,...old].forEach(x=>map.set(x.id||Date.now()+Math.random(),{...x,id:x.id||Date.now()+Math.random()}));
+    saveAll([...map.values()].sort((a,b)=>b.ts-a.ts));
+    alert('导入完成'); render();
+  }catch(e){ alert('导入失败:'+e.message);}
+  importFile.value='';
+};
+clearAllBtn.onclick=()=>{ if(confirm('确定清空全部心情？')){localStorage.removeItem(KEY); render();}};
+
+// 初始化
+render();
+</script>
+
+<!-- ===== 离线缓存支持 (内联 Service Worker) ===== -->
+<script>
+if('serviceWorker' in navigator){
+  const swCode=`
+    self.addEventListener('install',e=>{e.waitUntil(caches.open('mood-cache').then(c=>c.addAll(['./'])));});
+    self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});
+  `;
+  const blob=new Blob([swCode],{type:'text/javascript'});
+  const swUrl=URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl);
+}
+</script>
+</body>
+</html>
