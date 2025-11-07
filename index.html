@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>To-Do List</title>
+<meta name="theme-color" content="#ffffff" />
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<style>
+:root{
+  --bg:#fafafa;--card:#fff;--text:#111;--sub:#666;--line:#eee;
+  --red:#ff6b81;--red-dark:#e54860;
+  --orange:#ffa94d;--orange-dark:#e38c25;
+  --yellow:#ffd43b;--yellow-dark:#e0b800;
+  --blue:#74c0fc;--blue-dark:#3b9be8;
+}
+*{box-sizing:border-box;}
+body{margin:0;display:flex;height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;background:var(--bg);color:var(--text);}
+aside{
+  width:120px;background:var(--card);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;padding:12px 6px;gap:10px;
+}
+.tab-btn{
+  width:100%;border:none;padding:8px;border-radius:12px;cursor:pointer;
+  font-size:14px;font-weight:500;color:#fff;transition:transform .1s ease,filter .2s,background .2s;
+}
+.tab-btn:hover{transform:scale(1.05);filter:brightness(1.05);}
+.tab-btn.active{box-shadow:0 0 0 2px rgba(0,0,0,0.15);}
+.red{background:var(--red);}
+.orange{background:var(--orange);}
+.yellow{background:var(--yellow);}
+.blue{background:var(--blue);}
+.gray{background:transparent;color:#000;font-weight:700;}
+.gray.active{box-shadow:none;background:transparent;}
+.urgent-tab{border:1.5px solid #bbb;background:#fff;color:#555;transition:all .2s ease;}
+.urgent-tab.active{background:#d6336c;color:#fff;border-color:#d6336c;}
+
+main{flex:1;overflow:auto;padding:16px;}
+.header-line{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+#pageTitle{margin:0;font-size:22px;font-weight:700;transition:color .4s ease;}
+.btn-add{
+  background:#1a73e8;color:#fff;border:none;border-radius:999px;padding:8px 16px;
+  cursor:pointer;font-weight:600;transition:filter .2s ease;
+}
+.btn-add:hover{filter:brightness(1.1);}
+textarea{
+  width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;
+  resize:none;min-height:60px;font-size:15px;margin-bottom:10px;
+}
+.category-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.cat-btn{
+  flex:1;min-width:100px;padding:8px;border:none;border-radius:999px;font-size:14px;
+  cursor:pointer;transition:all .2s ease;color:#fff;font-weight:500;
+}
+.cat-btn.red{background:var(--red);}
+.cat-btn.orange{background:var(--orange);}
+.cat-btn.yellow{background:var(--yellow);}
+.cat-btn.blue{background:var(--blue);}
+.cat-btn.active.red{box-shadow:0 0 0 3px var(--red-dark),0 0 6px var(--red-dark);transform:scale(1.02);}
+.cat-btn.active.orange{box-shadow:0 0 0 3px var(--orange-dark),0 0 6px var(--orange-dark);transform:scale(1.02);}
+.cat-btn.active.yellow{box-shadow:0 0 0 3px var(--yellow-dark),0 0 6px var(--yellow-dark);transform:scale(1.02);}
+.cat-btn.active.blue{box-shadow:0 0 0 3px var(--blue-dark),0 0 6px var(--blue-dark);transform:scale(1.02);}
+.urgent-btn{
+  padding:8px 14px;border-radius:999px;font-size:14px;font-weight:600;
+  border:1.5px solid #ccc;background:#fff;color:#555;cursor:pointer;
+  transition:all .2s ease;margin-top:8px;
+}
+.urgent-btn.active{border-color:var(--red);color:var(--red);}
+.task{
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:10px;margin-top:10px;box-shadow:0 2px 4px rgba(0,0,0,0.05);
+}
+.task-header{display:flex;justify-content:space-between;align-items:center;font-size:14px;}
+.task-tag{font-size:12px;color:var(--sub);}
+.urgent-tag{color:var(--red);font-weight:600;}
+.footer{font-size:12px;color:var(--sub);text-align:center;margin-top:40px;}
+</style>
+</head>
+
+<body>
+  <aside id="tabs">
+    <button class="tab-btn gray active" data-tab="all" data-label="Home">Home</button>
+    <button class="tab-btn red" data-tab="urgent-important" data-label="紧急重要">紧急重要</button>
+    <button class="tab-btn orange" data-tab="urgent-not" data-label="紧急不重要">紧急不重要</button>
+    <button class="tab-btn yellow" data-tab="not-urgent-important" data-label="重要不紧急">重要不紧急</button>
+    <button class="tab-btn blue" data-tab="not-urgent-not" data-label="不紧急不重要">不紧急不重要</button>
+    <button class="tab-btn urgent-tab" data-tab="urgent-only" data-label="Urgent">⚡ Urgent</button>
+  </aside>
+
+  <main>
+    <div class="header-line">
+      <h1 id="pageTitle" style="color:#000;">Home</h1>
+      <button class="btn-add" id="addBtn">添加任务</button>
+    </div>
+
+    <div id="composer">
+      <textarea id="taskInput" placeholder="要做的事…"></textarea>
+      <div class="category-buttons" id="categoryArea">
+        <button class="cat-btn red" data-cat="urgent-important">紧急重要</button>
+        <button class="cat-btn orange" data-cat="urgent-not">紧急不重要</button>
+        <button class="cat-btn yellow" data-cat="not-urgent-important">重要不紧急</button>
+        <button class="cat-btn blue" data-cat="not-urgent-not">不紧急不重要</button>
+      </div>
+      <button class="urgent-btn" id="urgentBtn">⚡ Urgent</button>
+    </div>
+
+    <!-- Urgent 页的分类按钮 -->
+    <div class="category-buttons" id="urgentCategory" style="display:none;">
+      <button class="cat-btn red" data-jump="urgent-important">紧急重要</button>
+      <button class="cat-btn orange" data-jump="urgent-not">紧急不重要</button>
+      <button class="cat-btn yellow" data-jump="not-urgent-important">重要不紧急</button>
+      <button class="cat-btn blue" data-jump="not-urgent-not">不紧急不重要</button>
+    </div>
+
+    <div id="taskList"></div>
+    <div class="footer">🍬 离线本地保存 · 单文件可用</div>
+  </main>
+
+<script>
+const KEY='todo_matrix_v13';
+function loadAll(){try{return JSON.parse(localStorage.getItem(KEY)||'[]');}catch{return[];}}
+function saveAll(a){localStorage.setItem(KEY,JSON.stringify(a));}
+
+const taskInput=document.getElementById('taskInput');
+const addBtn=document.getElementById('addBtn');
+const taskList=document.getElementById('taskList');
+const tabs=document.querySelectorAll('#tabs button');
+const catBtns=document.querySelectorAll('.cat-btn');
+const urgentBtn=document.getElementById('urgentBtn');
+const pageTitle=document.getElementById('pageTitle');
+const categoryArea=document.getElementById('categoryArea');
+const urgentCategory=document.getElementById('urgentCategory');
+let currentTab='all',selectedCat='urgent-important',urgentFlag=false;
+
+// 分类按钮选择
+catBtns.forEach(btn=>{
+  if(btn.dataset.cat){
+    btn.onclick=()=>{
+      catBtns.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedCat=btn.dataset.cat;
+    };
+  }
+});
+catBtns[0].classList.add('active');
+
+// urgent 开关
+urgentBtn.onclick=()=>{urgentFlag=!urgentFlag;urgentBtn.classList.toggle('active',urgentFlag);};
+
+// 添加任务逻辑
+addBtn.onclick=()=>{
+  const text=taskInput.value.trim();
+  if(!text)return;
+  const all=loadAll();
+  let cat=selectedCat;
+  if(currentTab!=='all'&&currentTab!=='urgent-only'){
+    cat=currentTab; // 当前分类页自动归类
+  }
+  all.unshift({id:Date.now(),text,category:cat,urgent:urgentFlag});
+  saveAll(all);
+  taskInput.value='';
+  urgentFlag=false;
+  urgentBtn.classList.remove('active');
+  render();
+};
+
+// tab切换
+tabs.forEach(btn=>{
+  btn.onclick=()=>switchTab(btn.dataset.tab);
+});
+
+function switchTab(tab){
+  tabs.forEach(b=>b.classList.remove('active'));
+  const target=[...tabs].find(b=>b.dataset.tab===tab);
+  if(target)target.classList.add('active');
+  currentTab=tab;
+  pageTitle.textContent=target?target.dataset.label:'Home';
+  pageTitle.style.color=getTabColor(tab);
+
+  if(tab!=='all'&&tab!=='urgent-only'){
+    selectedCat=tab;
+  }
+
+  // 切换界面时显示逻辑
+  if(tab==='all'){
+    categoryArea.style.display='flex';
+    urgentBtn.style.display='inline-block';
+    urgentCategory.style.display='none';
+    urgentFlag=false;
+    urgentBtn.classList.remove('active');
+  }else if(tab==='urgent-only'){
+    // Urgent 页：与 Home 相同界面，但默认勾选 urgent
+    categoryArea.style.display='flex';
+    urgentBtn.style.display='none';
+    urgentCategory.style.display='none';
+    urgentFlag=true;
+    urgentBtn.classList.add('active');
+  }else{
+    categoryArea.style.display='none';
+    urgentBtn.style.display='none';
+    urgentCategory.style.display='none';
+    urgentFlag=false;
+    urgentBtn.classList.remove('active');
+  }
+  render();
+}
+
+function getTabColor(tab){
+  switch(tab){
+    case 'urgent-important':return'var(--red)';
+    case 'urgent-not':return'var(--orange)';
+    case 'not-urgent-important':return'var(--yellow)';
+    case 'not-urgent-not':return'var(--blue)';
+    case 'urgent-only':return'#d6336c';
+    default:return'#000';
+  }
+}
+
+function render(){
+  const all = loadAll();
+  let list = all;
+
+  if(currentTab!=='all'){
+    if(currentTab==='urgent-only') list = all.filter(t=>t.urgent);
+    else list = all.filter(t=>t.category===currentTab);
+  }
+
+  // ✅ urgent 任务优先排序
+  // ✅ urgent + 类别优先排序
+list.sort((a,b)=>{
+  // ① urgent 优先
+  if (a.urgent && !b.urgent) return -1;
+  if (!a.urgent && b.urgent) return 1;
+
+  // ② 类别优先级
+  const order = {
+    'urgent-important': 1,
+    'urgent-not': 2,
+    'not-urgent-important': 3,
+    'not-urgent-not': 4
+  };
+  const ca = order[a.category] || 99;
+  const cb = order[b.category] || 99;
+  if (ca !== cb) return ca - cb;
+
+  // ③ 时间倒序（新任务在前）
+  return b.id - a.id;
+});
+
+
+  taskList.innerHTML='';
+  if(list.length===0){
+    taskList.innerHTML='<p style="color:var(--sub);text-align:center;">暂无任务</p>';
+    return;
+  }
+
+  list.forEach(t=>{
+    const el=document.createElement('div');
+    el.className='task';
+    el.innerHTML=`<div class="task-header">
+        <span>${t.text}</span>
+        <div class="task-tag">
+          ${t.urgent?'<span class="urgent-tag">⚡ Urgent</span> · ':''}${mapCat(t.category)}
+        </div>
+      </div>`;
+    el.onclick=()=>{
+      if(confirm('删除这个任务？')){
+        const all=loadAll().filter(x=>x.id!==t.id);
+        saveAll(all);
+        render();
+      }
+    };
+    taskList.append(el);
+  });
+}
+
+function mapCat(c){
+  return({
+    'urgent-important':'🔴 紧急重要',
+    'urgent-not':'🟠 紧急不重要',
+    'not-urgent-important':'🟡 重要不紧急',
+    'not-urgent-not':'🔵 不紧急不重要'
+  })[c]||'';
+}
+
+render();
+</script>
+
+
+<script>
+if('serviceWorker'in navigator){
+  const swCode=`self.addEventListener('install',e=>{e.waitUntil(caches.open('todo-cache').then(c=>c.addAll(['./'])));});
+self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});`;
+  const blob=new Blob([swCode],{type:'text/javascript'});
+  const swUrl=URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl);
+}
+</script>
+</body>
+</html>
